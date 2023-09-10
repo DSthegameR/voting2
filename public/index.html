@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Number Storage App</title>
+</head>
+<body>
+    <h1>Number Storage App</h1>
+    <form id="numberForm">
+        <label for="number">Enter a Number (max: 10):</label>
+        <input type="number" id="number" name="number" required max="10">
+        <button type="submit">Submit</button>
+        <button type="button" id="sumNumbers">Sum Numbers</button>
+        <button type="button" id="clearEntries">Clear Entries</button>
+    </form>
+    <h2>Stored Numbers:</h2>
+    <ul id="storedNumbers"></ul>
+    <div id="sumResult"></div>
+    <script>
+        // JavaScript to handle form submission and display stored numbers
+        const numberForm = document.getElementById('numberForm');
+        const storedNumbersList = document.getElementById('storedNumbers');
+
+        numberForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const numberInput = document.getElementById('number');
+            const number = parseInt(numberInput.value);
+
+            const response = await fetch('/api/store-number', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ number })
+            });
+
+            if (response.ok) {
+                numberInput.value = '';
+                loadStoredNumbers();
+            }
+        });
+
+        async function loadStoredNumbers() {
+            const response = await fetch('/api/get-numbers');
+            const data = await response.json();
+
+            if (response.ok) {
+                const numbers = data.numbers;
+                storedNumbersList.innerHTML = '';
+                numbers.forEach((num) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = num;
+                    storedNumbersList.appendChild(listItem);
+                });
+            }
+        }
+
+        // Sum entered numbers
+        const sumNumbersButton = document.getElementById('sumNumbers');
+        sumNumbersButton.addEventListener('click', async () => {
+            const response = await fetch('/api/get-numbers');
+            const data = await response.json();
+
+            if (response.ok) {
+                const numbers = data.numbers;
+                const sum = numbers.reduce((acc, curr) => acc + curr, 0);
+                document.getElementById('sumResult').textContent = `Sum of Numbers: ${sum}`;
+            }
+        });
+
+        // Clear all entries
+        const clearEntriesButton = document.getElementById('clearEntries');
+        clearEntriesButton.addEventListener('click', async () => {
+            const response = await fetch('/api/clear-entries', {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                loadStoredNumbers();
+                document.getElementById('sumResult').textContent = '';
+            }
+        });
+
+        // Load stored numbers when the page loads
+        loadStoredNumbers();
+    </script>
+</body>
+</html>
